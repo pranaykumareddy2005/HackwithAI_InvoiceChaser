@@ -1,0 +1,14 @@
+# Escalation rules: days overdue -> level
+# Level 1: friendly reminder (1-7 days)
+# Level 2: firm (8-14 days)
+# Level 3: urgent (15+ days)
+levels:
+  - max_days: 7
+    level: 1
+  - max_days: 14
+    level: 2
+  - max_days: 999
+    level: 3
+
+# Skip sending if last contact was within this many days
+min_days_between_contact: 3

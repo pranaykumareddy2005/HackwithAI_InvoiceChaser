@@ -1,0 +1,14 @@
+agno
+pytest
+pydantic
+python-dotenv
+sqlalchemy>=2.0
+apscheduler
+pyyaml
+twilio
+imapclient
+pandas
+matplotlib
+seaborn
+flask
+streamlit
