@@ -222,6 +222,12 @@ def classify_intent(text: str) -> Tuple[str, float]:
         return intent, confidence
     except Exception:  # pragma: no cover - malformed JSON / network
         pass
+    # Fallback when Ollama unavailable: simple keyword match for demo
+    lower = text.strip().lower()
+    if any(p in lower for p in ("i'll pay", "i will pay", "we'll pay", "will pay", "pay by friday", "pay next week", "i've paid", "already paid", "payment made")):
+        return ResponseIntent.PAY.value, 0.85
+    if any(p in lower for p in ("won't pay", "wont pay", "dispute", "refuse", "can't pay")):
+        return ResponseIntent.DISPUTE.value, 0.8
     return ResponseIntent.UNKNOWN.value, 0.0
 
 
@@ -235,9 +241,13 @@ def _find_client_by_phone(session, phone: str) -> Optional[Client]:
 
 
 def _find_recent_invoice_for_client(session, client_id: int) -> Optional[Invoice]:
+    """Find most recent overdue or promise-to-pay invoice for client (so 'I've paid' can update it)."""
     stmt = (
         select(Invoice)
-        .where(Invoice.client_id == client_id, Invoice.status == InvoiceStatus.OVERDUE.value)
+        .where(
+            Invoice.client_id == client_id,
+            Invoice.status.in_([InvoiceStatus.OVERDUE.value, InvoiceStatus.PROMISE_TO_PAY.value]),
+        )
         .order_by(Invoice.updated_at.desc())
         .limit(1)
     )

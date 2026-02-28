@@ -20,6 +20,9 @@ load_dotenv()
 # Config
 MIN_DAYS_BETWEEN_CONTACT = int(os.getenv("MIN_DAYS_BETWEEN_CONTACT", "3"))
 RATE_LIMIT_SECONDS = float(os.getenv("DISPATCH_RATE_LIMIT_SECONDS", "1.0"))
+# Business hours: set 0-24 to disable. Use 8-20 for compliance (skip outside 8am-8pm)
+BUSINESS_HOURS_START = int(os.getenv("BUSINESS_HOURS_START", "0"))
+BUSINESS_HOURS_END = int(os.getenv("BUSINESS_HOURS_END", "24"))
 
 # SMTP only (Gmail: smtp.gmail.com:587, STARTTLS, app password)
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
@@ -57,6 +60,19 @@ def _should_skip_recent_contact(session, invoice_id: int) -> bool:
     if last is None:
         return False
     return (datetime.utcnow() - last.replace(tzinfo=None)).days < MIN_DAYS_BETWEEN_CONTACT
+
+
+def _is_business_hours() -> tuple[bool, str]:
+    """Return (ok, skip_reason). Skip if outside business hours (set 0-24 to disable)."""
+    if BUSINESS_HOURS_START == 0 and BUSINESS_HOURS_END == 24:
+        return True, ""
+    now = datetime.utcnow()
+    hour = now.hour
+    if hour < BUSINESS_HOURS_START:
+        return False, f"Skipped: {hour}:{now.minute:02d}AM local (outside business hours)"
+    if hour >= BUSINESS_HOURS_END:
+        return False, f"Skipped: {hour}:{now.minute:02d} local (outside business hours)"
+    return True, ""
 
 
 def _send_email(to: str, subject: str, body: str) -> Optional[str]:
@@ -154,9 +170,12 @@ def send_selected_communications(communication_ids: List[int]) -> int:
 def run_communication_dispatcher() -> int:
     """
     Load all outbound communications with sent_at=NULL (email only),
-    respect client opted_out and 3-day rule, send via SMTP. Returns number sent.
+    respect client opted_out, 3-day rule, and business hours. Send via SMTP.
+    Returns number sent.
     """
+    import json
     sent = 0
+    ok, skip_reason = _is_business_hours()
     with get_session() as session:
         stmt = (
             select(Communication)
@@ -177,6 +196,18 @@ def run_communication_dispatcher() -> int:
             if client.opted_out or not client.email:
                 continue
             if _should_skip_recent_contact(session, comm.invoice_id):
+                continue
+            if not ok:
+                # Record skip for dashboard compliance display
+                meta = {}
+                if comm.metadata_json:
+                    try:
+                        meta = json.loads(comm.metadata_json)
+                    except Exception:
+                        pass
+                meta["skipped_at"] = datetime.utcnow().isoformat()
+                meta["skip_reason"] = skip_reason
+                comm.metadata_json = json.dumps(meta)
                 continue
             mid = _send_email(
                 client.email,

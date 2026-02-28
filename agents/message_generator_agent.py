@@ -43,6 +43,7 @@ class EscalationMessage(BaseModel):
     channel: Literal["email", "sms"]
     subject: Optional[str] = None
     body: str
+    source: Literal["template", "llm"] = "llm"  # For dashboard Template vs LLM toggle
 
 
 OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/generate")
@@ -155,6 +156,7 @@ def _render_template(invoice: InvoiceInput) -> EscalationMessage:
         channel=invoice.channel,
         subject=subject,
         body=body,
+        source="template",
     )
 
 
@@ -201,6 +203,7 @@ def generate_escalation_message(invoice: InvoiceInput) -> EscalationMessage:
         channel=invoice.channel,
         subject=subject,
         body=body,
+        source="llm",
     )
 
 
@@ -256,6 +259,8 @@ def run_message_generator(invoice_ids: Optional[list[int]] = None) -> int:
                         continue
                 except Exception:
                     continue
+                import json
+                meta = {"source": msg.source, "template_preview": _render_template(payload).body[:300]}
                 comm = Communication(
                     invoice_id=inv.id,
                     channel=msg.channel,
@@ -264,6 +269,7 @@ def run_message_generator(invoice_ids: Optional[list[int]] = None) -> int:
                     subject=msg.subject,
                     escalation_level=msg.level,
                     sent_at=None,
+                    metadata_json=json.dumps(meta),
                 )
                 session.add(comm)
                 created += 1

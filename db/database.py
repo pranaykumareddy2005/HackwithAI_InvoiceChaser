@@ -39,6 +39,12 @@ def init_db() -> None:
     Base.metadata.create_all(bind=engine)
 
 
+def reset_db() -> None:
+    """Drop all tables and recreate. Clean slate for demo."""
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+
 @contextmanager
 def get_session() -> Generator[Session, None, None]:
     """Context manager for database sessions."""
