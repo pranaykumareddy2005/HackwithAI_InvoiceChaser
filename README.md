@@ -12,6 +12,7 @@ An AI-powered system that automates overdue invoice collection: monitors status,
 - [Quick Start](#quick-start)
 - [Setup & Configuration](#setup--configuration)
 - [How to Use](#how-to-use)
+- [Dashboard Outputs](#dashboard-outputs)
 - [Project Layout](#project-layout)
 - [Technology Stack](#technology-stack)
 
@@ -230,6 +231,46 @@ Rules are configurable in `config/escalation_rules.yaml`.
 
 ---
 
+## Dashboard Outputs
+
+The following screenshots show what the running system produces after the demo workflow.
+
+### Clients Dashboard
+
+<p align="center">
+  <img src="clientdashoutput.png" alt="Clients Dashboard" width="800"/>
+</p>
+
+The **Clients Dashboard** provides an overview of clients and collection performance:
+
+| Section | What it shows |
+|---------|---------------|
+| **Success Analytics** | Collection rate, average days to pay, amount collected, ROI vs setup time; CSV export |
+| **Financial Summary** | Total expected, overdue count, promises-to-pay, paid count, sent today |
+| **Client List** | Each client with escalation stepper (Lv1✓ → Lv2✓ → Lv3), invoice count, days overdue; click **View** for details |
+| **Daily Chase Status** | Progress (e.g. 1/15), next run time (9 AM), compliance percentage |
+
+In the example above, **Lahari** has one invoice ($500) at Lv3, with Lv1 and Lv2 completed and a promise-to-pay recorded.
+
+### Pipeline Processing Log (Escalation Flow)
+
+<p align="center">
+  <img src="escalationoutput.png" alt="Processing log (escalation flow)" width="800"/>
+</p>
+
+When you expand an invoice in the **Pipeline** tab, the **Processing log (escalation flow)** shows the full timeline:
+
+| Element | Description |
+|---------|-------------|
+| **Summary bar** | Invoice #, client, amount; escalation path (Lv1✓ → Lv2✓ → Lv3); dates; email sent status |
+| **Invoice metadata** | Due date, status (e.g. `promise_to_pay`), days overdue, current escalation level |
+| **Processing timeline** | Chronological events: invoice creation, Lv1/Lv2/Lv3 emails sent (with subject and body preview), payment confirmation replies |
+| **Jump to client** | Quick navigation to the client’s dashboard entry |
+
+In the example above, Invoice #1 (Lahari, $500) progressed through Lv1 and Lv2, received an Lv3 urgent reminder, and then a payment confirmation email after the client replied with a promise to pay.
+
+---
+
 ## Project Layout
 
 ```
@@ -241,9 +282,11 @@ Rules are configurable in `config/escalation_rules.yaml`.
 ├── orchestrator.py  # APScheduler entrypoint
 ├── dashboard.py     # Streamlit dashboard (demo workflow, pipeline, mock reply)
 ├── run_demo.py      # One-shot pipeline run
-├── highlevel.png    # High-level architecture diagram
-├── chase.png        # Chase pipeline sequence diagram
-└── response.png     # Response handling flow diagram
+├── highlevel.png        # High-level architecture diagram
+├── chase.png            # Chase pipeline sequence diagram
+├── response.png         # Response handling flow diagram
+├── clientdashoutput.png # Clients Dashboard screenshot
+└── escalationoutput.png # Pipeline processing log (escalation flow) screenshot
 ```
 
 ---
