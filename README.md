@@ -139,17 +139,18 @@ cp .env.example .env
 
 Edit `.env` with SMTP credentials to send emails. Do not commit `.env`.
 
-### Demo Workflow (5 steps)
+### Demo Workflow (4 steps)
 
 ```bash
 streamlit run dashboard.py
 ```
 
-1. **Settings** → **Reset database** (clean slate)
-2. **Clients Dashboard** → **Add Client** (name, email; contact preference: Email)
-3. **Clients Dashboard** → **Add Invoice** (select client, amount, due date 7 days ago)
-4. **Pipeline** tab → **Run pipeline now** (Monitor → Generator → Dispatcher)
-5. **Pipeline** tab → **Mock client reply** → Type "I'll pay by Friday" → **Send** (Response Handler updates invoice to `promise_to_pay`)
+1. **Clients Dashboard** → **Add Client** (name, email; contact preference: Email)
+2. **Clients Dashboard** → **Add Invoice** (select client, amount, due date 7 days ago)
+3. **Pipeline** tab → **Run pipeline now** (Monitor → Generator → Dispatcher)
+4. **Pipeline** tab → **Mock client reply** → Type "I'll pay by Friday" → **Send** (Response Handler updates invoice to `promise_to_pay`)
+
+> **Fresh data?** If you need a clean slate, use **Settings** → **Reset database** first.
 
 **Optional:** `python -m db.seed_sample_data` creates 3 sample clients/invoices. `python run_demo.py` runs the pipeline headless.
 
